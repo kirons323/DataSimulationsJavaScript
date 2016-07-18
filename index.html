@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="DS_app">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head
+         content must come *after* these tags -->
+
+    <title>Data Simulation</title>
+
+    <!-- Bootstrap -->
+    <link href="./bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="./bower_components/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="./bower_components/angular-bootstrap/ui-bootstrap-csp.css" rel="stylesheet">
+    <link href="./bower_components/components-font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+</head>
+
+<!-- ConnectionControl saves data inputted into the UI as well as all property data. -->
+<!-- @TODO: Move around buttons so this looks more presentable. -->
+<body ng-controller="MainControl">
+
+<div class="container">
+    <br/>
+    <br/>
+
+    <div class="main">
+
+        <!--
+             This form covers connection info, and validateForm() makes sure all fields are valid before startAgent()
+             is actually called.
+        -->
+        <form name="simulation_buttons" id="simulation_buttons">
+
+            <!-- Allows user to start simulating selected properties. -->
+            <div class="form group row text-center">
+                <button type="button" id="start_simulation" ng-click="startSimulation()">
+                    Start Simulation</button>
+            </div>
+
+            <!-- Allows user to stop simulating all properties. -->
+            <div class="form group row text-center">
+                <button type="button" id="stop_simulation" ng-click="stopSimulation()">
+                    Stop Simulation</button>
+            </div>
+
+            <!-- User has the option to save the data that was generated during the simulation. -->
+            <!-- @TODO: Allow user to navigate to desired folder and save a new file there.
+                    Can only click once simulation has stopped.
+            -->
+            <div class="form-gropu row text-center">
+                <input id="fc_save_sim_data" name="fc_save_sim_data" type="file"
+                       onchange="angular.element(this).scope().simDataSelected(this)">
+                <button type="button" id="save_sim_data" ng-click="saveSimData()">Save Simulation Data</button>
+            </div>
+
+            <!--
+                User has ability to load in a file filled with data so the AEC will update data with it over time.
+            -->
+            <div class="form-group row text-center">
+                <input id="data_file_chooser" name="data_file_chooser" type="file">
+                <button type="button" id="data_file_upload" ng-click="uploadDataFile()">Upload Data File</button>
+            </div>
+
+            <!-- User can run their simulation data from a file. -->
+            <div class="form-group row text-center">
+                <button type="button" id="run_data" ng-click="runData()">Run Data Simulation</button>
+            </div>
+
+        </form>
+
+    </div>
+
+    <!-- This form covers property information, including the abilities to add, delete, and edit properties. -->
+    <form name="property_info" id="property_info">
+
+        <div class="main">
+
+            <!-- User must enter the name of their property. -->
+            <div class="form-group row">
+                <label class="col-sm-5 form-control-label">Property Name
+                    <input type="text" class="col-sm-5 form-control" name="prop_name" id="prop_name"
+                           ng-model="tempProp.name">
+                </label>
+            </div>
+
+            <!--
+                The data type is a menu itself; it changes depending on what is selected. When viewing/editing a
+                property, the menu will change by itself.
+            -->
+            <div class="form-group row">
+                <label class="col-sm-10 form-control-label">Data Type
+                    <select class="form-control" id="data_type" name="data_type" ng-model="tempProp.type">
+                        <option value="Number">Number</option>
+                        <option value="Boolean">Boolean</option>
+                    </select>
+                </label>
+            </div>
+
+            <!-- The menu for the Number data type. -->
+            <div id="number_data_type" class="group" ng-show="tempProp.type == 'Number'">
+                <div class="form-group row">
+                    <!-- Allows user to select what kind of simulation they want. -->
+                    <label class="col-sm-10 form-control-label">Change Type
+                        <select class="form-control" ng-model="tempProp.changeType" id="change_type">
+                            <option>Random</option>
+                            <option>Step</option>
+                            <option>Advanced</option>
+                        </select>
+                    </label>
+                    <!-- Allows user to enter minimum value for the property. -->
+                    <label class="col-sm-5 form-control-label"
+                           ng-show="(tempProp.changeType == 'Random') || (tempProp.changeType == 'Step')">Minimum:
+                        <input type="number" class="form-control" ng-model="tempProp.min" id="minimum">
+                    </label>
+                    <!-- Allows user to enter a maximum value for the property. -->
+                    <label class="col-sm-5 form-control-label"
+                           ng-show="(tempProp.changeType == 'Random') || (tempProp.changeType == 'Step')">Maximum:
+                        <input type="number" class="form-control" ng-model="tempProp.max" id="maximum">
+                    </label>
+                    <!-- Allows user to enter an initial value for the property. -->
+                    <label class="col-sm-5 form-control-label"
+                           ng-show="(tempProp.changeType == 'Random') || (tempProp.changeType == 'Step')">Initial Value:
+                        <input type="number" class="form-control" ng-model="tempProp.initialValue" id="initial_value">
+                    </label>
+                    <!-- Allows user to enter a step size for the number. -->
+                    <label class="col-sm-5 form-control-label" ng-show="tempProp.changeType == 'Step'">Step Size:
+                        <input type="number" class="form-control" ng-model="tempProp.stepSize" id="step_size">
+                    </label>
+                    <!-- Allows user to choose what sort of formula they want. -->
+                    <label class="col-sm-10 form-control-label" ng-show="tempProp.changeType == 'Advanced'">Formulas
+                        <select class="form-control" id="formula_chooser" ng-model="tempProp.formula">
+                            <option>Exponential</option>
+                            <option>Logarithmic</option>
+                            <option>Trigonometric</option>
+                        </select>
+                    </label>
+                    <!-- @TODO: Exponential Simulation -->
+                    <label class="col-sm-10 form-control-label"
+                           ng-show="(tempProp.formula == 'Exponential') && (tempProp.changeType == 'Advanced')">x(t) = Ae^(Bt)
+                        <label class="col-sm-5 form-control-label">Initial Value (A):
+                            <input type="number" class="form-control" id="exp_A" ng-model="tempProp.for_A">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Rate (B):
+                            <input type="number" class="form-control" id="exp_B" ng-model="tempProp.for_B">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Time Start:
+                            <input type="number" class="form-control" id="exp_tstart" ng-model="tempProp.t_start">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Time End:
+                            <input type="number" class="form-control" id="exp_tend" ng-model="tempProp.t_end">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Number of Timesteps:
+                            <input type="number" class="form-control" id="exp_timesteps" ng-model="tempProp.timesteps">
+                        </label>
+                    </label>
+                    <!-- @TODO: Logarithmic Simulation -->
+                    <label class="col-sm-10 form-control-label"
+                           ng-show="(tempProp.formula == 'Logarithmic') && (tempProp.changeType == 'Advanced')">x(t) = Aln(Bt)
+                        <label class="col-sm-5 form-control-label">Initial Value (A):
+                            <input type="number" class="form-control" id="log_A" ng-model="tempProp.for_A">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Rate (B):
+                            <input type="number" class="form-control" id="log_B" ng-model="tempProp.for_B">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Time Start:
+                            <input type="number" class="form-control" id="log_tstart" ng-model="tempProp.t_start">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Time End:
+                            <input type="number" class="form-control" id="log_tend" ng-model="tempProp.t_end">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Number of Timesteps:
+                            <input type="number" class="form-control" id="log_timesteps" ng-model="tempProp.timesteps">
+                        </label>
+                    </label>
+                    <!-- @TODO: Trigonometric Simulation -->
+                    <label class="col-sm-10 form-control-label"
+                           ng-show="(tempProp.formula == 'Trigonometric') && (tempProp.changeType == 'Advanced')">
+                        <select class="form-control" id="trig_chooser" ng-model="tempProp.trig">
+                            <option>Sine</option>
+                            <option>Cosine</option>
+                            <option>Tangent</option>
+                        </select>
+                        <label class="col-sm-5 form-control-label">Amplitude (A):
+                            <input type="number" class="form-control" id="trig_A" ng-model="tempProp.for_A">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Period Adjustment (B):
+                            <input type="number" class="form-control" id="trig_B" ng-model="tempProp.for_B">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Time Start:
+                            <input type="number" class="form-control" id="trig_tstart" ng-model="tempProp.t_start">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Time End:
+                            <input type="number" class="form-control" id="trig_tend" ng-model="tempProp.t_end">
+                        </label>
+                        <label class="col-sm-5 form-control-label">Number of Timesteps:
+                            <input type="number" class="form-control" id="trig_timesteps" ng-model="tempProp.timesteps">
+                        </label>
+                    </label>
+                </div>
+            </div>
+
+            <!-- The menu for the Boolean data type. -->
+            <div id="boolean_data_type" class="group" ng-show="tempProp.type == 'Boolean'">
+                <div class="form-group row">
+                    <!-- User can select the starting value for the property. -->
+                    <label class="col-sm-6 form-control-label">Value
+                        <select class="form-control" ng-model="tempProp.value" id="boolean_value">
+                            <option>True</option>
+                            <option>False</option>
+                        </select>
+                    </label>
+                    <!-- User can select whether or not the value will change during the simulation. -->
+                    <label class="col-sm-6 form-control-label">Variability
+                        <select class="form-control" ng-model="tempProp.variability" id="boolean_variability">
+                            <option>Static</option>
+                            <option>Variable</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+
+            <!-- User can enter the refresh rate for this property during the simulation. -->
+            <div class="form-group row">
+                <label class="col-sm-2 form-control-label">Refresh Rate (seconds)
+                    <input type="number" class="form-control" ng-model="tempProp.refreshRate" name="refresh_rate" id="refresh_rate">
+                </label>
+            </div>
+
+            <!-- User can select whether or not they want this property included in the simulation. -->
+            <div class="col-sm-12 form-group row">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" ng-model="tempProp.enabled" id="enabled_box"><strong>Include in Simulation</strong>
+                    </label>
+                </div>
+
+                <!-- Adds current property data to array of properties in the controller. -->
+                <div class="form-group row text-center">
+                    <button type="button" id="add_prop_btn" ng-click="addProperty()">
+                        Add New Property</button>
+                </div>
+            </div>
+
+            <div class="col-sm-12 form-group row">
+                <!-- Shows list of properties - dynamically updates as properties are added / deleted / uploaded -->
+                <!-- @TODO: Add the auto-detect functionality to this, make it a field and not a dropdown menu. -->
+                <label>Properties
+                    <select ng-model="currentlySelected" id="list_of_props">
+                        <option ng-repeat="prop in myProperties">{{ prop.name }}</option>
+                    </select>
+                </label>
+
+                <!-- @TODO: should the add/delete/edit buttons be disabled while simulating data? -->
+
+                <!-- Deletes property currently selected in the select menu. -->
+                <div class="form-group row text-center">
+                    <button type="button" id="del_prop_btn" ng-click="deleteProperty()">Delete Property</button>
+                </div>
+
+                <!-- Allows user to edit property currently selected in the select menu. -->
+                <div class="form-group row text-center">
+                    <button type="button" id="edit_prop_btn" ng-click="editProperty()">
+                        View/Edit Property</button>
+                </div>
+
+                <!-- Saves edits user is making to current property. Edits shouldn't save unless this button is clicked. -->
+                <div class="form-group row text-center">
+                    <button type="submit" id="save_edits_btn" ng-click="saveEdits()">Save Edits</button>
+                </div>
+
+                <!--
+                    User has the option to save property data to a JSON file. It will save data for all properties in the
+                    list. Must select pre-existing file.
+                -->
+                <!-- @TODO: Allow user to navigate to desired folder and save a new file there. -->
+                <div class="form-group row text-center">
+                    <input id="save_prop_file_chooser" name="save_prop_file_chooser" type="file"
+                           onchange="angular.element(this).scope().fileNameSelected(this)">
+                    <button type="button" id="save_prop_btn" ng-click="savePropertyData()">
+                        Save Property Data
+                    </button>
+                </div>
+
+                <!--
+                    User can load properties from JSON file and they will be added to the list. More than one file can be
+                    loaded at once. If a file is invalid, the user will be notified and everything up to that point will
+                    be added.
+                -->
+                <!-- @TODO: Prevent it from producing duplicate properties. -->
+                <div class="form-group row text-center">
+                    <input id="load_prop_file_chooser" name="load_prop_file_chooser" type="file"
+                           onchange="angular.element(this).scope().propFileLoading(this)">
+                    <button type="button" id="load_prop_btn" ng-click="loadPropertyData()">
+                        Load Property Data
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+    </form> <!-- end of property form -->
+
+    <br><br>
+
+</div> <!-- end of container -->
+
+</body>
+
+<script src="./bower_components/angular/angular.min.js"></script>
+<script src="./controller.js"></script>
+
+</html>
