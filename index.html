@@ -29,8 +29,7 @@
     <div class="main">
 
         <!--
-             This form covers connection info, and validateForm() makes sure all fields are valid before startAgent()
-             is actually called.
+             This form covers most buttons.
         -->
         <form name="simulation_buttons" id="simulation_buttons">
 
@@ -50,14 +49,14 @@
             <!-- @TODO: Allow user to navigate to desired folder and save a new file there.
                     Can only click once simulation has stopped.
             -->
-            <div class="form-gropu row text-center">
+            <div class="form-group row text-center">
                 <input id="fc_save_sim_data" name="fc_save_sim_data" type="file"
                        onchange="angular.element(this).scope().simDataSelected(this)">
                 <button type="button" id="save_sim_data" ng-click="saveSimData()">Save Simulation Data</button>
             </div>
 
             <!--
-                User has ability to load in a file filled with data so the AEC will update data with it over time.
+                User has ability to load in a file filled with data so the DS will update data with it over time.
             -->
             <div class="form-group row text-center">
                 <input id="data_file_chooser" name="data_file_chooser" type="file">
@@ -137,7 +136,6 @@
                             <option>Trigonometric</option>
                         </select>
                     </label>
-                    <!-- @TODO: Exponential Simulation -->
                     <label class="col-sm-10 form-control-label"
                            ng-show="(tempProp.formula == 'Exponential') && (tempProp.changeType == 'Advanced')">x(t) = Ae^(Bt)
                         <label class="col-sm-5 form-control-label">Initial Value (A):
@@ -156,7 +154,6 @@
                             <input type="number" class="form-control" id="exp_timesteps" ng-model="tempProp.timesteps">
                         </label>
                     </label>
-                    <!-- @TODO: Logarithmic Simulation -->
                     <label class="col-sm-10 form-control-label"
                            ng-show="(tempProp.formula == 'Logarithmic') && (tempProp.changeType == 'Advanced')">x(t) = Aln(Bt)
                         <label class="col-sm-5 form-control-label">Initial Value (A):
@@ -175,7 +172,6 @@
                             <input type="number" class="form-control" id="log_timesteps" ng-model="tempProp.timesteps">
                         </label>
                     </label>
-                    <!-- @TODO: Trigonometric Simulation -->
                     <label class="col-sm-10 form-control-label"
                            ng-show="(tempProp.formula == 'Trigonometric') && (tempProp.changeType == 'Advanced')">
                         <select class="form-control" id="trig_chooser" ng-model="tempProp.trig">
